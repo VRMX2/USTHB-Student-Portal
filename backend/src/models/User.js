@@ -5,31 +5,24 @@ const userSchema = new mongoose.Schema({
   studentId: {
     type: String,
     required: true,
-    unique: true,
-    trim: true
+    unique: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
+    unique: true
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6,
-    select: false
+    required: true
   },
   firstName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   lastName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   role: {
     type: String,
@@ -46,23 +39,17 @@ const userSchema = new mongoose.Schema({
   },
   level: {
     type: String,
-    enum: ['L1', 'L2', 'L3', 'M1', 'M2', 'PhD'],
-    required: function() {
-      return this.role === 'student';
-    }
+    enum: ['L1', 'L2', 'L3', 'M1', 'M2'],
+    required: function() { return this.role === 'student'; }
   },
-  phoneNumber: {
-    type: String,
-    trim: true
-  },
-  address: {
-    type: String,
-    trim: true
-  },
+  specialization: String,
   profileImage: {
     type: String,
-    default: ''
+    default: 'https://res.cloudinary.com/demo/image/upload/v1/avatar.png'
   },
+  phoneNumber: String,
+  dateOfBirth: Date,
+  address: String,
   enrolledCourses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course'
@@ -75,34 +62,20 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  lastLogin: {
-    type: Date
-  },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date
+  lastLogin: Date
 }, {
   timestamps: true
 });
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  
+  if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Get full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-export default mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);
