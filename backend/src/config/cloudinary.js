@@ -1,18 +1,15 @@
-import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
 
-// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Multer configuration for file uploads
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  // Accept images and PDFs
   if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
@@ -22,31 +19,23 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter
 });
 
-// Helper function to upload to Cloudinary
 const uploadToCloudinary = (fileBuffer, folder = 'usthb-portal') => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: 'auto'
-      },
+      { folder, resource_type: 'auto' },
       (error, result) => {
         if (error) reject(error);
         else resolve(result);
       }
     );
-
     uploadStream.end(fileBuffer);
   });
 };
 
-// Helper function to delete from Cloudinary
 const deleteFromCloudinary = async (publicId) => {
   try {
     await cloudinary.uploader.destroy(publicId);
