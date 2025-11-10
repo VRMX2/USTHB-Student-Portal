@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const logsDir = path.join(__dirname, '../logs');
 if (!fs.existsSync(logsDir)) {

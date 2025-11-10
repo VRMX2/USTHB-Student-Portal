@@ -1,8 +1,8 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Course = require('../models/Course');
-const Club = require('../models/Club');
+import "dotenv/config";
+import mongoose from 'mongoose';
+import User from '../models/User';
+import Course from '../models/Course';
+import Club from '../models/Club';
 
 const connectDB = async () => {
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/usthb_portal');

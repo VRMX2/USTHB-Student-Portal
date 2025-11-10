@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const Course = require('../models/Course');
-const Grade = require('../models/Grade');
-const Attendance = require('../models/Attendance');
+import User from '../models/User';
+import Course from '../models/Course';
+import Grade from '../models/Grade';
+import Attendance from '../models/Attendance';
 
 const calculateStudentAnalytics = async (studentId) => {
   try {
