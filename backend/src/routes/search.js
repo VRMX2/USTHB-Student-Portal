@@ -1,11 +1,11 @@
-// routes/search.js
-const express = require('express');
+// routes/search.js - Search Functionality Routes
+import express from 'express';
 const router = express.Router();
-const User = require('../models/User');
-const Course = require('../models/Course');
-const Club = require('../models/Club');
-const Announcement = require('../models/Announcement');
-const { protect } = require('../middleware/auth');
+import User from '../models/User';
+import Course from '../models/Course';
+import Club from '../models/Club';
+import Announcement from '../models/Announcement';
+import { protect } from '../middleware/auth';
 
 // @route   GET /api/search
 // @desc    Global search across all entities
@@ -178,6 +178,45 @@ router.get('/courses', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/search/clubs
+// @desc    Search clubs specifically
+// @access  Private
+router.get('/clubs', protect, async (req, res) => {
+  try {
+    const { q, category } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+    let query = {
+      $or: [
+        { name: searchRegex },
+        { description: searchRegex }
+      ],
+      isActive: true
+    };
+
+    if (category) {
+      query.category = category;
+    }
+
+    const clubs = await Club.find(query)
+      .populate('president', 'firstName lastName')
+      .select('name description logo category members')
+      .limit(20);
+
+    res.json({
+      success: true,
+      count: clubs.length,
+      clubs
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // @route   GET /api/search/suggestions
 // @desc    Get search suggestions/autocomplete
 // @access  Private
@@ -212,7 +251,7 @@ router.get('/suggestions', protect, async (req, res) => {
     if (!type || type === 'users') {
       const users = await User.find({
         $or: [
-          { firstName: searchRegex },
+			{ firstName: searchRegex },
           { lastName: searchRegex },
           { studentId: searchRegex }
         ]
@@ -245,6 +284,87 @@ router.get('/suggestions', protect, async (req, res) => {
     res.json({
       success: true,
       suggestions: suggestions.slice(0, 10)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/search/advanced
+// @desc    Advanced search with multiple filters
+// @access  Private
+router.get('/advanced', protect, async (req, res) => {
+  try {
+    const { q, entity, faculty, department, level, category, role } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+    let results = [];
+
+    switch (entity) {
+      case 'users':
+        let userQuery = {
+          $or: [
+            { firstName: searchRegex },
+            { lastName: searchRegex },
+            { email: searchRegex },
+            { studentId: searchRegex }
+          ]
+        };
+        if (role) userQuery.role = role;
+        if (faculty) userQuery.faculty = faculty;
+        if (department) userQuery.department = department;
+        if (level) userQuery.level = level;
+
+        results = await User.find(userQuery)
+          .select('firstName lastName email studentId role profileImage department faculty level')
+          .limit(50);
+        break;
+
+      case 'courses':
+        let courseQuery = {
+          $or: [
+            { name: searchRegex },
+            { code: searchRegex },
+            { description: searchRegex }
+          ]
+        };
+        if (faculty) courseQuery.faculty = faculty;
+        if (department) courseQuery.department = department;
+        if (level) courseQuery.level = level;
+
+        results = await Course.find(courseQuery)
+          .populate('professor', 'firstName lastName')
+          .limit(50);
+        break;
+
+      case 'clubs':
+        let clubQuery = {
+          $or: [
+            { name: searchRegex },
+            { description: searchRegex }
+          ],
+          isActive: true
+        };
+        if (category) clubQuery.category = category;
+
+        results = await Club.find(clubQuery)
+          .populate('president', 'firstName lastName')
+          .limit(50);
+        break;
+
+      default:
+        return res.status(400).json({ error: 'Invalid entity type' });
+    }
+
+    res.json({
+      success: true,
+      entity,
+      count: results.length,
+      results
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
