@@ -18,6 +18,7 @@
     "express": "^5.1.0",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "module": "^2.0.0",
     "mongoose": "^8.19.3",
     "multer": "^2.0.2",
     "socket.io": "^4.8.1"
